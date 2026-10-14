@@ -1,0 +1,547 @@
+<!doctype html>
+<html lang="ru" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Интеллект X — Транспортные потоки (прототип)</title>
+  <link rel="stylesheet" href="kit/kit.css" />
+  <link rel="stylesheet" href="app.css" />
+  <script src="https://cdn.jsdelivr.net/npm/lucide@1.46.0/dist/umd/lucide.min.js"></script>
+</head>
+<body class="bg-canvas text-fg font-ui">
+
+<!-- ================= drawer (narrow widths) ================= -->
+<nav class="drawer p-3" id="drawer" aria-label="Sections">
+  <div class="flex items-center justify-between px-2 py-1 mb-2">
+    <span class="text-heading-sm" data-i18n="nav.sections">Разделы</span>
+    <button class="btn btn-icon" data-kit-close data-i18n-aria="common.close" aria-label="Закрыть"><i data-lucide="x"></i></button>
+  </div>
+  <div class="nav-list" data-nav></div>
+</nav>
+
+<div class="shell">
+
+  <!-- ================= side navigation ================= -->
+  <aside class="side">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <div class="leading-tight min-w-0">
+        <div class="text-heading-sm" data-i18n="app.product">Интеллект X</div>
+        <div class="text-caption text-fg-subtle truncate" data-i18n="app.subtitle">Транспортные потоки</div>
+      </div>
+    </div>
+    <div class="nav-list" data-nav></div>
+    <div class="side-foot">
+      <div class="side-engine">
+        <span class="dot dot-ok"></span>
+        <span data-i18n="app.engine">Аналитика: Traffic Analysis by RoadAR</span>
+      </div>
+      <div class="text-caption text-fg-subtle" data-i18n="app.site">Hai Phong Port · 8 каналов</div>
+      <div class="text-caption text-fg-subtle" data-i18n="app.demo">Демо-данные · 14.10.2026</div>
+    </div>
+  </aside>
+
+  <!-- ================= main column ================= -->
+  <div class="main-col">
+
+    <header class="topbar">
+      <button class="btn btn-icon only-narrow" data-kit-drawer="#drawer" data-i18n-aria="nav.sections" aria-label="Разделы"><i data-lucide="menu"></i></button>
+      <h1 class="text-heading-md truncate" id="pageTitle">Обзор</h1>
+
+      <div class="ctx" id="ctxBar" aria-live="polite"></div>
+
+      <div class="topbar-tools">
+        <span class="clock text-caption text-fg-muted" id="clock"></span>
+        <div class="seg" data-kit-seg id="langSeg" role="group" aria-label="Language">
+          <button class="btn" value="ru" aria-pressed="true">RU</button>
+          <button class="btn" value="en" aria-pressed="false">EN</button>
+        </div>
+        <button class="btn btn-icon" data-kit-theme data-i18n-aria="app.theme" data-i18n-title="app.theme" aria-label="Тема"><i data-lucide="sun-moon"></i></button>
+        <button class="btn btn-subtle user-btn" data-kit-menu="#userMenu" aria-haspopup="menu" aria-expanded="false">
+          <span class="avatar">NL</span>
+          <span class="hide-sm" data-i18n="app.user">Нгуен Лан · оператор</span>
+          <i data-lucide="chevron-down" class="w-4 h-4 text-fg-subtle"></i>
+        </button>
+        <div class="menu" id="userMenu" role="menu" hidden>
+          <button class="menu-item" role="menuitem" data-kit-dialog="#about"><i data-lucide="info"></i><span data-i18n="app.about">О модуле</span></button>
+          <button class="menu-item" role="menuitem"><i data-lucide="user"></i><span data-i18n="app.profile">Профиль</span></button>
+          <div class="menu-sep"></div>
+          <button class="menu-item" role="menuitem"><i data-lucide="log-out"></i><span data-i18n="app.logout">Выйти</span></button>
+        </div>
+      </div>
+    </header>
+
+    <main class="views">
+
+      <!-- ================= OVERVIEW ================= -->
+      <section class="view" data-view="overview">
+        <div class="kpi-row" id="ovKpi"></div>
+        <div class="grid-2-1">
+          <div class="card p-4 min-w-0">
+            <div class="card-head">
+              <h2 class="text-heading-sm" data-i18n="ov.chartTitle">ТС по классам за сегодня, шаг 1 ч</h2>
+              <div class="legend" id="ovLegend"></div>
+            </div>
+            <div class="bars" id="ovChart"></div>
+          </div>
+          <div class="card p-4 min-w-0">
+            <div class="card-head">
+              <h2 class="text-heading-sm" data-i18n="ov.mixTitle">Состав потока</h2>
+              <span class="text-caption text-fg-muted" data-i18n="ov.today">сегодня</span>
+            </div>
+            <div class="mix" id="ovMix"></div>
+          </div>
+        </div>
+        <div class="grid-2-1">
+          <div class="card min-w-0">
+            <div class="card-head p-4 pb-0">
+              <h2 class="text-heading-sm" data-i18n="ov.channels">Каналы</h2>
+              <span class="badge badge-neutral" id="ovChCount"></span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="table" id="ovChannels"></table>
+            </div>
+          </div>
+          <div class="card p-4 min-w-0">
+            <div class="card-head">
+              <h2 class="text-heading-sm" data-i18n="ov.events">Открытые события</h2>
+              <button class="ml-auto link-action link-dense" data-goto="events"><span data-i18n="common.all">Все</span><i data-lucide="arrow-right"></i></button>
+            </div>
+            <ul class="ev-list" id="ovEvents"></ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= VIDEO ================= -->
+      <section class="view" data-view="video" hidden>
+        <div class="video-layout">
+          <div class="card ch-panel">
+            <div class="text-label text-fg-muted px-3 pt-3 pb-1" data-i18n="video.channels">Каналы</div>
+            <div id="chList" class="ch-list"></div>
+          </div>
+
+          <div class="card video-card min-w-0">
+            <div class="video-toolbar">
+              <div class="seg" data-kit-seg id="vMode" role="group">
+                <button class="btn" value="live" aria-pressed="true"><i data-lucide="radio"></i><span data-i18n="video.live">Живое видео</span></button>
+                <button class="btn" value="archive" aria-pressed="false"><i data-lucide="history"></i><span data-i18n="video.archive">Архив</span></button>
+              </div>
+              <div class="seg" data-kit-seg id="vTracks" role="group" data-i18n-aria="video.tracks">
+                <button class="btn" value="off" aria-pressed="false" data-i18n="video.tracksOff">Без треков</button>
+                <button class="btn" value="current" aria-pressed="true" data-i18n="video.tracksCurrent">Текущие</button>
+                <button class="btn" value="all" aria-pressed="false" data-i18n="video.tracksAll">Все треки</button>
+              </div>
+              <label class="choice choice-dense"><input type="checkbox" class="switch switch-dense" id="vByClass" checked /><span data-i18n="video.byClass">Цвет по классу</span></label>
+              <label class="choice choice-dense"><input type="checkbox" class="switch switch-dense" id="vMarkup" checked /><span data-i18n="video.markup">Разметка сцены</span></label>
+              <span class="ml-auto text-caption text-fg-muted" id="vInfo"></span>
+            </div>
+
+            <div class="scene-wrap" id="sceneWrap">
+              <svg class="scene" id="scene" viewBox="0 0 960 540" preserveAspectRatio="xMidYMid meet" role="img"></svg>
+              <div class="scene-osd" id="sceneOsd"></div>
+              <div class="scene-legend" id="sceneLegend"></div>
+              <div class="line-pop" id="linePop" hidden></div>
+              <div class="scene-off" id="sceneOff" hidden>
+                <i data-lucide="video-off"></i>
+                <div class="text-body-md-medium" data-i18n="video.noSignal">Нет сигнала с канала</div>
+                <div class="text-caption" data-i18n="video.noSignalHint">Платформа не получает видеопоток с 11:04. Аналитика RoadAR на канале приостановлена.</div>
+              </div>
+            </div>
+
+            <div class="timeline" id="timeline" hidden>
+              <button class="btn btn-icon" id="tlPlay" data-i18n-aria="video.play" aria-label="Play"><i data-lucide="pause"></i></button>
+              <span class="text-caption font-mono" id="tlFrom"></span>
+              <input type="range" id="tlRange" min="0" max="1000" value="0" class="tl-range" aria-label="Timeline" />
+              <span class="text-caption font-mono" id="tlTo"></span>
+              <span class="badge badge-info font-mono" id="tlNow"></span>
+              <button class="btn btn-outline btn-toggle h-8" id="tlStill" aria-pressed="false" disabled><i data-lucide="image"></i><span data-i18n="video.still">Стоп-кадр с полной траекторией</span></button>
+            </div>
+          </div>
+
+          <div class="card feed-panel">
+            <div class="card-head p-3 pb-1">
+              <h2 class="text-heading-sm" data-i18n="video.feed">Обнаружения</h2>
+              <span class="text-caption text-fg-muted" data-i18n="video.feedHint">на линиях подсчёта</span>
+            </div>
+            <ul class="feed" id="feed"></ul>
+            <div class="feed-foot">
+              <button class="btn btn-outline w-full" id="feedSearch"><i data-lucide="search"></i><span data-i18n="video.findClass">Найти ТС этого класса</span></button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= SEARCH BY CLASS ================= -->
+      <section class="view" data-view="search" hidden>
+        <div class="search-layout">
+          <aside class="card filter-panel">
+            <div class="fp-block">
+              <div class="fp-head"><span class="text-label-strong" data-i18n="search.classes">Класс ТС</span>
+                <button class="link-action link-dense ml-auto" id="clsClear" data-i18n="common.reset">Сбросить</button></div>
+              <div class="grp-chips" id="grpChips"></div>
+              <div class="cls-tiles" id="clsTiles"></div>
+            </div>
+            <div class="fp-block">
+              <div class="fp-head"><span class="text-label-strong" data-i18n="search.period">Период</span></div>
+              <div class="seg w-full" data-kit-seg id="sPeriod" role="group">
+                <button class="btn" value="day" aria-pressed="true" data-i18n="period.day">Сутки</button>
+                <button class="btn" value="week" aria-pressed="false" data-i18n="period.week">Неделя</button>
+                <button class="btn" value="month" aria-pressed="false" data-i18n="period.month">Месяц</button>
+              </div>
+              <div class="date-pair">
+                <input type="date" class="field field-dense" id="sFrom" />
+                <span class="text-fg-subtle">—</span>
+                <input type="date" class="field field-dense" id="sTo" />
+              </div>
+            </div>
+            <div class="fp-block">
+              <div class="fp-head"><span class="text-label-strong" data-i18n="search.where">Где</span></div>
+              <div class="seg w-full" data-kit-seg id="sScope" role="group">
+                <button class="btn" value="one" aria-pressed="true" data-i18n="search.thisCh">Этот канал</button>
+                <button class="btn" value="all" aria-pressed="false" data-i18n="search.allCh">Все каналы</button>
+              </div>
+              <label class="label" for="sCh" data-i18n="common.channel">Канал</label>
+              <select class="field field-dense" id="sCh"></select>
+              <div class="two-col">
+                <div><label class="label" for="sLane" data-i18n="common.lane">Полоса</label><select class="field field-dense" id="sLane"></select></div>
+                <div><label class="label" for="sDir" data-i18n="common.direction">Направление</label><select class="field field-dense" id="sDir"></select></div>
+              </div>
+              <label class="label" for="sLine" data-i18n="search.lineZone">Линия или зона</label>
+              <select class="field field-dense" id="sLine"></select>
+            </div>
+            <div class="fp-block">
+              <div class="fp-head"><span class="text-label-strong" data-i18n="search.attrs">Признаки и атрибуты</span></div>
+              <label class="choice choice-dense"><input type="checkbox" class="check check-dense" id="sTrailer" /><span data-i18n="search.trailer">С прицепом или полуприцепом</span></label>
+              <label class="label" for="sBody" data-i18n="search.body">Тип кузова</label>
+              <select class="field field-dense" id="sBody"></select>
+              <label class="label" for="sMake" data-i18n="search.make">Марка и модель</label>
+              <input class="field field-dense" id="sMake" list="makeList" data-i18n-ph="search.makePh" placeholder="например, Howo" />
+              <datalist id="makeList"></datalist>
+              <div class="helper text-caption text-fg-subtle" data-i18n="search.colorNa">Цвет ТС недоступен в профиле RoadAR</div>
+            </div>
+          </aside>
+
+          <div class="card results min-w-0">
+            <div class="res-head">
+              <div class="chips" id="sChips"></div>
+              <div class="res-tools">
+                <span class="text-body-md-medium" id="sCount"></span>
+                <div class="seg" data-kit-seg id="sView" role="group">
+                  <button class="btn btn-icon" value="tiles" aria-pressed="true" data-i18n-aria="search.tiles"><i data-lucide="layout-grid"></i></button>
+                  <button class="btn btn-icon" value="list" aria-pressed="false" data-i18n-aria="search.list"><i data-lucide="list"></i></button>
+                </div>
+                <button class="btn btn-outline" data-kit-menu="#sExport" aria-haspopup="menu"><i data-lucide="download"></i><span data-i18n="common.export">Выгрузить</span></button>
+                <div class="menu" id="sExport" role="menu" hidden>
+                  <button class="menu-item" role="menuitem" data-export="XLSX"><i data-lucide="file-spreadsheet"></i>XLSX</button>
+                  <button class="menu-item" role="menuitem" data-export="CSV"><i data-lucide="file-text"></i>CSV</button>
+                </div>
+                <div class="seg" data-kit-seg id="sDemo" role="group" data-i18n-title="common.demoStates">
+                  <button class="btn" value="data" aria-pressed="true" data-i18n="state.data">Данные</button>
+                  <button class="btn" value="loading" aria-pressed="false" data-i18n="state.loading">Загрузка</button>
+                  <button class="btn" value="error" aria-pressed="false" data-i18n="state.error">Ошибка</button>
+                </div>
+              </div>
+            </div>
+            <div id="sBody2">
+              <div class="tiles" id="sTiles"></div>
+              <div class="overflow-x-auto"><table class="table" id="sTable" hidden></table></div>
+              <div class="more-row" id="sMoreRow"><button class="btn btn-outline" id="sMore"></button></div>
+            </div>
+            <div id="sEmpty" class="empty" hidden>
+              <i data-lucide="search-x"></i>
+              <div class="text-body-md-medium" data-i18n="search.emptyTitle">Ничего не найдено</div>
+              <div class="text-caption" data-i18n="search.emptyHint">Выберите хотя бы один класс или расширьте период и каналы</div>
+              <button class="btn btn-outline mt-1" id="sReset" data-i18n="common.resetFilters">Сбросить фильтры</button>
+            </div>
+            <div id="sLoading" class="p-4 tiles" hidden aria-busy="true"></div>
+            <div id="sError" class="empty" hidden>
+              <i data-lucide="cloud-off" class="text-danger-icon"></i>
+              <div class="text-body-md-medium" data-i18n="search.errTitle">Не удалось выполнить поиск</div>
+              <div class="text-caption" data-i18n="search.errHint">Сервер вертикали не ответил за 10 с. Проверьте соединение с Интеллект X.</div>
+              <button class="btn btn-primary mt-1" id="sRetry" data-i18n="common.retry">Повторить</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= LANE REPORT ================= -->
+      <section class="view" data-view="report" hidden>
+        <div class="card rep-filters">
+          <div class="rf">
+            <span class="label" data-i18n="report.channels">Каналы</span>
+            <button class="btn btn-outline rf-btn" data-kit-menu="#rChMenu" aria-haspopup="true"><span id="rChLbl"></span><i data-lucide="chevron-down"></i></button>
+            <div class="popover rf-pop" id="rChMenu" hidden></div>
+          </div>
+          <div class="rf">
+            <span class="label" data-i18n="report.lanes">Полосы</span>
+            <button class="btn btn-outline rf-btn" data-kit-menu="#rLaneMenu" aria-haspopup="true"><span id="rLaneLbl"></span><i data-lucide="chevron-down"></i></button>
+            <div class="popover rf-pop" id="rLaneMenu" hidden></div>
+          </div>
+          <div class="rf">
+            <span class="label" data-i18n="report.classes">Классы ТС</span>
+            <button class="btn btn-outline rf-btn" data-kit-menu="#rClsMenu" aria-haspopup="true"><span id="rClsLbl"></span><i data-lucide="chevron-down"></i></button>
+            <div class="popover rf-pop" id="rClsMenu" hidden></div>
+          </div>
+          <div class="rf">
+            <span class="label" data-i18n="report.period">Период</span>
+            <div class="rf-row">
+              <div class="seg" data-kit-seg id="rPeriod" role="group">
+                <button class="btn" value="day" aria-pressed="true" data-i18n="period.day">Сутки</button>
+                <button class="btn" value="week" aria-pressed="false" data-i18n="period.week">Неделя</button>
+                <button class="btn" value="month" aria-pressed="false" data-i18n="period.month">Месяц</button>
+              </div>
+              <input type="date" class="field field-dense rf-date" id="rFrom" />
+              <span class="text-fg-subtle">—</span>
+              <input type="date" class="field field-dense rf-date" id="rTo" />
+            </div>
+          </div>
+          <div class="rf">
+            <span class="label" data-i18n="report.step">Шаг агрегации</span>
+            <div class="seg" data-kit-seg id="rStep" role="group"></div>
+          </div>
+          <div class="rf rf-end">
+            <button class="btn btn-outline" data-kit-menu="#rExport" aria-haspopup="menu"><i data-lucide="download"></i><span data-i18n="common.export">Выгрузить</span></button>
+            <div class="menu" id="rExport" role="menu" hidden>
+              <button class="menu-item" role="menuitem" data-export="XLSX"><i data-lucide="file-spreadsheet"></i>XLSX</button>
+              <button class="menu-item" role="menuitem" data-export="CSV"><i data-lucide="file-text"></i>CSV</button>
+              <button class="menu-item" role="menuitem" data-export="PDF"><i data-lucide="file"></i>PDF</button>
+              <div class="menu-sep"></div>
+              <button class="menu-item" role="menuitem" data-kit-dialog="#schedule"><i data-lucide="calendar-clock"></i><span data-i18n="report.schedule">По расписанию на почту…</span></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="kpi-row" id="rKpi"></div>
+
+        <div class="card min-w-0">
+          <div class="px-4 pt-2 rep-tabs-row" data-kit-tabs id="rTabs">
+            <div class="tabs" role="tablist">
+              <button class="tab" role="tab" aria-selected="true" aria-controls="rSummary"><i data-lucide="table-2"></i><span data-i18n="report.summary">Сводный</span></button>
+              <button class="tab" role="tab" aria-selected="false" aria-controls="rDetail"><i data-lucide="chart-column"></i><span data-i18n="report.detail">Детальный</span></button>
+            </div>
+            <div class="seg" data-kit-seg id="rDemo" role="group" data-i18n-title="common.demoStates">
+              <button class="btn" value="data" aria-pressed="true" data-i18n="state.data">Данные</button>
+              <button class="btn" value="loading" aria-pressed="false" data-i18n="state.loading">Загрузка</button>
+              <button class="btn" value="empty" aria-pressed="false" data-i18n="state.empty">Пусто</button>
+              <button class="btn" value="error" aria-pressed="false" data-i18n="state.error">Ошибка</button>
+            </div>
+          </div>
+
+          <div id="rStateBox">
+            <div role="tabpanel" id="rSummary" class="p-4 rep-panel">
+              <div class="rep-hint text-caption text-fg-muted" data-i18n="report.cellHint">Нажмите на ячейку, чтобы открыть список ТС в поиске по классу</div>
+              <div class="overflow-x-auto"><table class="table matrix" id="rMatrix"></table></div>
+              <div class="rep-compo">
+                <h3 class="text-heading-sm" data-i18n="report.compo">Состав потока по полосам</h3>
+                <div id="rCompo" class="compo"></div>
+              </div>
+            </div>
+            <div role="tabpanel" id="rDetail" class="p-4 rep-panel" hidden>
+              <div class="card-head">
+                <h3 class="text-heading-sm" id="rDetailTitle"></h3>
+                <div class="legend" id="rLegend"></div>
+              </div>
+              <div class="bars bars-tall" id="rChart"></div>
+              <div class="overflow-x-auto mt-4"><table class="table matrix" id="rIntervals"></table></div>
+            </div>
+          </div>
+          <div id="rLoading" class="p-4 grid gap-3" hidden aria-busy="true">
+            <div class="skeleton h-8"></div><div class="skeleton h-8"></div><div class="skeleton h-8"></div><div class="skeleton h-8"></div><div class="skeleton h-8"></div>
+          </div>
+          <div id="rEmpty" class="empty" hidden>
+            <i data-lucide="chart-no-axes-column"></i>
+            <div class="text-body-md-medium" data-i18n="report.emptyTitle">Нет данных за выбранный период</div>
+            <div class="text-caption" data-i18n="report.emptyHint">На выбранных полосах не было проездов, или канал не передавал видео</div>
+          </div>
+          <div id="rError" class="empty" hidden>
+            <i data-lucide="cloud-off" class="text-danger-icon"></i>
+            <div class="text-body-md-medium" data-i18n="report.errTitle">Отчёт не построен</div>
+            <div class="text-caption" data-i18n="report.errHint">Хранилище агрегатов недоступно. Повторите попытку позже.</div>
+            <button class="btn btn-primary mt-1" id="rRetry" data-i18n="common.retry">Повторить</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= EVENTS ================= -->
+      <section class="view" data-view="events" hidden>
+        <div class="card min-w-0">
+          <div class="res-head">
+            <h2 class="text-heading-sm" data-i18n="events.title">События RoadAR</h2>
+            <span class="badge badge-neutral" id="eCount"></span>
+            <div class="res-tools">
+              <select class="field field-dense w-56" id="eType"></select>
+              <div class="seg" data-kit-seg id="eStatus" role="group"></div>
+            </div>
+          </div>
+          <div class="overflow-x-auto"><table class="table" id="eTable"></table></div>
+          <div id="eEmpty" class="empty" hidden>
+            <i data-lucide="circle-check"></i>
+            <div class="text-body-md-medium" data-i18n="events.empty">Событий с такими условиями нет</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= SCENE SETUP ================= -->
+      <section class="view" data-view="scene" hidden>
+        <div class="scene-layout">
+          <div class="card video-card min-w-0">
+            <div class="video-toolbar">
+              <select class="field field-dense w-64" id="scCh"></select>
+              <span class="badge badge-success" id="scSync"></span>
+              <span class="ml-auto"></span>
+              <button class="btn btn-outline" id="scUndo"><i data-lucide="undo-2"></i><span data-i18n="scene.undo">Отменить</span></button>
+              <button class="btn btn-primary" id="scPush"><i data-lucide="upload"></i><span data-i18n="scene.push">Передать в RoadAR</span></button>
+            </div>
+            <div class="scene-wrap">
+              <svg class="scene" id="scScene" viewBox="0 0 960 540" preserveAspectRatio="xMidYMid meet"></svg>
+            </div>
+          </div>
+          <div class="card p-4 sc-side">
+            <h2 class="text-heading-sm" data-i18n="scene.elements">Элементы сцены</h2>
+            <div class="seg w-full" data-kit-seg id="scTool" role="group">
+              <button class="btn" value="lane" aria-pressed="true" data-i18n="scene.tLane">Полоса</button>
+              <button class="btn" value="line" aria-pressed="false" data-i18n="scene.tLine">Линия</button>
+              <button class="btn" value="zone" aria-pressed="false" data-i18n="scene.tZone">Зона</button>
+              <button class="btn" value="excl" aria-pressed="false" data-i18n="scene.tExcl">Исключение</button>
+            </div>
+            <ul class="sc-list" id="scList"></ul>
+            <div class="sc-calib">
+              <div class="text-label-strong" data-i18n="scene.calib">Калибровка (п. 1.3)</div>
+              <div class="two-col">
+                <div><label class="label" for="scDist" data-i18n="scene.dist">Отрезок разметки, м</label><input class="field field-dense" id="scDist" type="number" value="12" /></div>
+                <div><label class="label" for="scWidth" data-i18n="scene.width">Ширина полосы, м</label><input class="field field-dense" id="scWidth" type="number" value="3.5" step="0.1" /></div>
+              </div>
+            </div>
+            <div class="sc-na">
+              <i data-lucide="info"></i>
+              <div class="text-caption" data-i18n="scene.na">Стоп-линии, зоны очереди и пешеходные переходы не поддерживаются математикой RoadAR. Они перечислены в разделе 13 спецификации.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- ================= vehicle card ================= -->
+<dialog class="dialog dlg-wide" id="vehicle" aria-labelledby="vhTitle">
+  <div class="dlg-head">
+    <div class="vh-glyph" id="vhGlyph"></div>
+    <div class="min-w-0">
+      <h2 class="dialog-title truncate" id="vhTitle"></h2>
+      <div class="text-caption text-fg-muted mt-0" id="vhSub"></div>
+    </div>
+    <span class="badge badge-neutral ml-auto" id="vhConf"></span>
+    <button class="btn btn-icon" data-kit-close data-i18n-aria="common.close" aria-label="Закрыть"><i data-lucide="x"></i></button>
+  </div>
+  <div class="px-4 pt-2" data-kit-tabs id="vhTabs">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="true" aria-controls="vhTrack"><i data-lucide="route"></i><span data-i18n="vh.track">Траектория</span></button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="vhAttrs"><i data-lucide="list"></i><span data-i18n="vh.attrs">Атрибуты</span></button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="vhEvents"><i data-lucide="triangle-alert"></i><span data-i18n="vh.events">События</span> <span class="badge badge-neutral" id="vhEvCount">0</span></button>
+    </div>
+    <div role="tabpanel" id="vhTrack" class="py-3">
+      <div class="still-wrap">
+        <svg class="scene" id="vhScene" viewBox="0 0 960 540" preserveAspectRatio="xMidYMid meet"></svg>
+        <div class="still-legend">
+          <span><i class="lg-line lg-passed"></i><span data-i18n="vh.passed">пройдено</span></span>
+          <span><i class="lg-line lg-ahead"></i><span data-i18n="vh.ahead">впереди</span></span>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 mt-2">
+        <button class="btn btn-outline" id="vhPlay"><i data-lucide="play"></i><span data-i18n="vh.play">Воспроизвести проезд через зону</span></button>
+        <span class="text-caption text-fg-muted" id="vhPlayInfo"></span>
+      </div>
+    </div>
+    <div role="tabpanel" id="vhAttrs" class="py-3" hidden>
+      <dl class="attrs" id="vhAttrList"></dl>
+    </div>
+    <div role="tabpanel" id="vhEvents" class="py-3" hidden>
+      <ul class="ev-list" id="vhEvList"></ul>
+    </div>
+  </div>
+  <div class="dlg-foot">
+    <button class="btn btn-primary" id="vhArchive"><i data-lucide="history"></i><span data-i18n="vh.openArchive">Открыть в архиве</span></button>
+    <button class="btn btn-outline" id="vhSimilar"><i data-lucide="search"></i><span data-i18n="vh.similar">Найти ТС этого класса</span></button>
+    <button class="btn btn-outline" id="vhReport"><i data-lucide="chart-column"></i><span data-i18n="vh.laneReport">Отчёт по полосе</span></button>
+    <span class="ml-auto"></span>
+    <button class="btn btn-subtle" data-kit-close data-i18n="common.close">Закрыть</button>
+  </div>
+</dialog>
+
+<!-- ================= event card ================= -->
+<dialog class="dialog dlg-wide" id="event" aria-labelledby="evTitle">
+  <div class="dlg-head">
+    <div class="min-w-0">
+      <h2 class="dialog-title truncate" id="evTitle"></h2>
+      <div class="text-caption text-fg-muted mt-0" id="evSub"></div>
+    </div>
+    <span class="badge ml-auto" id="evPrio"></span>
+    <span class="badge" id="evStatus"></span>
+    <button class="btn btn-icon" data-kit-close data-i18n-aria="common.close" aria-label="Закрыть"><i data-lucide="x"></i></button>
+  </div>
+  <div class="px-4 pt-2" data-kit-tabs id="evTabs">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="true" aria-controls="evTrack"><i data-lucide="route"></i><span data-i18n="ev.tracks">Траектории ТС</span></button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="evInfo"><i data-lucide="info"></i><span data-i18n="ev.details">Детали</span></button>
+    </div>
+    <div role="tabpanel" id="evTrack" class="py-3">
+      <div class="still-wrap"><svg class="scene" id="evScene" viewBox="0 0 960 540" preserveAspectRatio="xMidYMid meet"></svg></div>
+      <ul class="rel-list" id="evRel"></ul>
+    </div>
+    <div role="tabpanel" id="evInfo" class="py-3" hidden>
+      <dl class="attrs" id="evAttrList"></dl>
+      <label class="label mt-3" for="evNote" data-i18n="ev.comment">Комментарий</label>
+      <textarea class="field" id="evNote" rows="2" data-i18n-ph="ev.commentPh" placeholder="Что сделано, кого уведомили…"></textarea>
+    </div>
+  </div>
+  <div class="dlg-foot">
+    <button class="btn btn-primary" id="evConfirm"><i data-lucide="check"></i><span data-i18n="ev.confirm">Подтвердить</span></button>
+    <button class="btn btn-outline" id="evFalse"><i data-lucide="ban"></i><span data-i18n="ev.false">Ложное срабатывание</span></button>
+    <button class="btn btn-outline" id="evAssign"><i data-lucide="user-round-plus"></i><span data-i18n="ev.assign">Передать ответственному</span></button>
+    <span class="ml-auto"></span>
+    <button class="btn btn-outline" id="evArchive"><i data-lucide="history"></i><span data-i18n="vh.openArchive">Открыть в архиве</span></button>
+  </div>
+</dialog>
+
+<!-- ================= schedule dialog ================= -->
+<dialog class="dialog" id="schedule" aria-labelledby="schTitle">
+  <div class="dlg-head">
+    <h2 class="dialog-title" id="schTitle" data-i18n="sch.title">Отчёт по расписанию</h2>
+    <button class="btn btn-icon ml-auto" data-kit-close data-i18n-aria="common.close" aria-label="Закрыть"><i data-lucide="x"></i></button>
+  </div>
+  <div class="p-4 grid gap-3">
+    <div><label class="label" for="schFreq" data-i18n="sch.freq">Периодичность</label>
+      <select class="field" id="schFreq"><option value="d" data-i18n="sch.daily">Ежедневно в 07:00</option><option value="w" data-i18n="sch.weekly">Еженедельно, понедельник 07:00</option><option value="m" data-i18n="sch.monthly">Ежемесячно, 1-е число 07:00</option></select></div>
+    <div><label class="label" for="schFmt" data-i18n="sch.format">Формат</label>
+      <select class="field" id="schFmt"><option>XLSX</option><option>PDF</option><option>CSV</option></select></div>
+    <div><label class="label" for="schTo" data-i18n="sch.to">Получатели</label>
+      <input class="field" id="schTo" value="traffic@haiphongport.vn, shift.lead@haiphongport.vn" /></div>
+    <div class="text-caption text-fg-muted" data-i18n="sch.hint">Будут использованы текущие каналы, полосы, классы и шаг отчёта.</div>
+  </div>
+  <div class="dlg-foot">
+    <span class="ml-auto"></span>
+    <button class="btn btn-outline" data-kit-close data-i18n="common.cancel">Отмена</button>
+    <button class="btn btn-primary" data-kit-close id="schSave" data-i18n="common.save">Сохранить</button>
+  </div>
+</dialog>
+
+<!-- ================= about ================= -->
+<dialog class="dialog" id="about" aria-labelledby="abTitle">
+  <div class="dlg-head">
+    <h2 class="dialog-title" id="abTitle" data-i18n="about.title">О модуле</h2>
+    <button class="btn btn-icon ml-auto" data-kit-close data-i18n-aria="common.close" aria-label="Закрыть"><i data-lucide="x"></i></button>
+  </div>
+  <div class="p-4 grid gap-2 text-body-md" id="abBody"></div>
+  <div class="dlg-foot"><span class="ml-auto"></span><button class="btn btn-primary" data-kit-close>OK</button></div>
+</dialog>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script src="kit/kit.js"></script>
+<script src="i18n.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
